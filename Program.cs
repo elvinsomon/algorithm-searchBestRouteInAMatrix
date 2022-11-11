@@ -9,7 +9,7 @@
         //4,5  & 9,1
         var origin = new MatrixElement { Position = new Position(4, 5) };
         var destiny = new MatrixElement { Position = new Position(9, 1) };
-        var cursor = origin.ClonePosition();
+        var cursor = origin.CopyPosition();
 
         var xdestinationDirection = Direction.Undefine;
         var ydestinationDirection = Direction.Undefine;
@@ -27,47 +27,38 @@
         if (destiny.Position.Y > origin.Position.Y)
             ydestinationDirection = Direction.Down;
 
+        Console.WriteLine($"\n\nEl destino esta {ydestinationDirection} to {xdestinationDirection}\n");
 
         while (!CursorIsInFinalPosition(cursor, destiny))
         {
-            int currentMatrixValue;
-            currentMatrixValue = cursor.Value;
+            var xAxisPosibleStep = cursor.CopyPosition();
+            var yAxisPosibleStep = cursor.CopyPosition();
 
-            //int nextStep = matrix[cursor[0], cursor[1]];
-            Console.WriteLine($"\n\nEl destino esta {ydestinationDirection} to {xdestinationDirection}\n");
-
-
-            int posibleYStep;
-            int posibleXStep;
-            var posibleStep = cursor.ClonePosition();
-
-            if (destiny.Position.X > origin.Position.X)
+            if (cursor.Position.X > 0 && cursor.Position.X < 9)
             {
-                xdestinationDirection = Direction.Rigth;
-                posibleStep.MoveToRight();
-                posibleXStep = posibleStep.Value;
+                if (destiny.Position.X > origin.Position.X)
+                    xAxisPosibleStep.MoveToRight();
+                else
+                    xAxisPosibleStep.MoveToLeft();
             }
 
-            //...
+            if (cursor.Position.Y > 0 && cursor.Position.Y < 9)
+            {
+                if (destiny.Position.Y < origin.Position.Y)
+                    yAxisPosibleStep.MoveToUp();
+                else
+                    yAxisPosibleStep.MoveToDown();
+            }
 
-            // if (ydestinationDirection == Direction.Up)
-            //     posibleYStep = matrix[StepUp(cursor).x, StepUp(cursor).y];
+            if (xAxisPosibleStep.Value < yAxisPosibleStep.Value)
+                cursor = xAxisPosibleStep.CopyPosition();
+            else
+                cursor = yAxisPosibleStep.CopyPosition();
 
-            // if (ydestinationDirection == Direction.Down)
-            //     posibleYStep = matrix[StepDown(cursor).x, StepDown(cursor).y];
-
-            // if (xdestinationDirection == Direction.Left)
-            //     posibleXStep = matrix[StepLeft(cursor).x, StepLeft(cursor).y];
-
-            // if (xdestinationDirection == Direction.Rigth)
-            //     posibleXStep = matrix[StepRight(cursor).x, StepRight(cursor).y];
-
-
-
-            return;
         }
 
 
+        Console.WriteLine($"El valor del cursor es: {cursor.Value}. Posicion: ({cursor.Position.X}, {cursor.Position.Y})");
     }
 
     static bool CursorIsInFinalPosition(MatrixElement cursor, MatrixElement destiny)
@@ -79,7 +70,7 @@
         Console.WriteLine("\t|0| \t|1|\t|2|\t|3|\t|4|\t|5|\t|6|\t|7|\t|8|\t|9|\n");
         for (int x = 0; x < 10; x++)
         {
-            Console.Write($"{x} ==");
+            Console.Write($"|{x}|");
             for (int y = 0; y < 10; y++)
             {
                 var matrixValue = rand.Next(1, 10);
@@ -103,7 +94,7 @@
         public void MoveToRight() => Position.X++;
 
 
-        public MatrixElement ClonePosition()
+        public MatrixElement CopyPosition()
         {
             return new MatrixElement
             {
@@ -114,7 +105,7 @@
 
     static void Monito(MatrixElement origin, MatrixElement target)
     {
-        var cursor = origin.ClonePosition();
+        var cursor = origin.CopyPosition();
 
         if (CursorIsInFinalPosition(cursor, target))
             return;
