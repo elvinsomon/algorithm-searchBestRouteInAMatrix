@@ -12,11 +12,11 @@
         var initialTime = DateTime.Now;
         var origin = new MatrixElement { Position = new Position(4, 5) }; //4,5  & 9,1
         var target = new MatrixElement { Position = new Position(9, 1) };
-        var cursor = origin.CopyPosition();
 
         ShowMatrix(origin, target);
         ShowPointsInformation(origin, target);
 
+        //Revisar...
         Console.WriteLine("\nRecorrido: ");
         Console.WriteLine($" · {origin.Value} (Origen)");
         CalculateBestRoute(origin, target);
@@ -62,7 +62,7 @@
         DirectionTranslation.Add(Direction.Up, "Arriba");
         DirectionTranslation.Add(Direction.Down, "Abajo");
         DirectionTranslation.Add(Direction.Left, "Izquierda");
-        DirectionTranslation.Add(Direction.Rigth, "Derecha");
+        DirectionTranslation.Add(Direction.Right, "Derecha");
     }
 
     static void ShowMatrix(MatrixElement origin, MatrixElement target)
@@ -108,23 +108,25 @@
 
             Console.Write("\n\t");
             for (int i = 0; i < MatrixDimention * 7.8; i++)
-                Console.Write("-");    
-                        
+                Console.Write("-");
+
             Console.WriteLine();
         }
     }
 
-
     private static List<MatrixElement> TraveledElements = new();
-    static void CalculateBestRoute(MatrixElement origin, MatrixElement target, MatrixElement? previuosNode = null)
+    static void CalculateBestRoute(MatrixElement origin, MatrixElement target)
     {
         var cursor = new Node(_matrix, origin);
         BestRoute.Nodes.Add(cursor);
         var cursorMatrixElement = new MatrixElement { Position = new Position(cursor.Position.X, cursor.Position.Y) };
 
+        //Si el cursor esta en el destino, terminar el recorrido
         if (CursorIsInTargetPosition(cursorMatrixElement, target))
             return;
 
+        //Evaluar si el target esta en la misma fila o columna que el cursor
+        //De ser asi, se debe mover en linea recta hacia el target
         foreach (var cursorEdge in cursor.Edges)
             if (CursorIsInTargetPosition(cursorEdge.Element, target))
             {
@@ -132,20 +134,12 @@
                 return;
             }
 
-        //Eliminar las aristas previamente recorridas
+        //Si el cursor apunta a una de las aristas previamente recorridas, eliminarla de la lista de aristas
         foreach (var elementsToDelete in TraveledElements)
             cursor.Edges.RemoveAll(x => x.Element == elementsToDelete);
 
         //Agregar a la lista de elementos recorridos el elemento actual
         TraveledElements.Add(cursorMatrixElement);
-
-        //Deprecado!!!
-        //Cuando el recorrido se torna en un recorrido circular, de produce un error en el stack dado que todas las aristas del nodo ya han sido recorridas anteriormente 
-        // if (cursor.Edges.Count == 0)
-        // {
-        //     System.Console.WriteLine("No se pudo encontrar el camino.");
-        //     return;
-        // }
 
         //Tomar las aristas que este en la direccion del target
         xAxisTargetDirection = GetXAxisTargetDirection(cursorMatrixElement, target);
@@ -166,31 +160,31 @@
             case Direction.Left:
                 Console.Write("←");
                 break;
-            case Direction.Rigth:
+            case Direction.Right:
                 Console.Write("→");
                 break;
 
             default:
                 break;
         }
+        
         Console.WriteLine();
         
         //A la funcion se le debe pasar el nodo actual, para que en la proxima iteracion sea descartado y no se vualva a procesar.
         //En la primera iteracion el nodo previo es el origen 
-        previuosNode = previuosNode is null ? origin : cursorMatrixElement;
-        CalculateBestRoute(minorValueEdge.Element, target, previuosNode);
+        //previuosNode = previuosNode is null ? origin : cursorMatrixElement;
+        CalculateBestRoute(minorValueEdge.Element, target);
     }
 
     static bool CursorIsInTargetPosition(MatrixElement cursor, MatrixElement destiny)
                 => cursor.Position.X == destiny.Position.X &&
                    cursor.Position.Y == destiny.Position.Y;
 
-
     private static Direction GetXAxisTargetDirection(MatrixElement origin, MatrixElement target)
     {
         var xDirection = Direction.Undefine;
         if (target.Position.X > origin.Position.X)
-            xDirection = Direction.Rigth;
+            xDirection = Direction.Right;
 
         if (target.Position.X < origin.Position.X)
             xDirection = Direction.Left;
@@ -210,7 +204,6 @@
 
         return xDirection;
     }
-
 
     public record class MatrixElement
     {
@@ -247,9 +240,8 @@
         Up,
         Down,
         Left,
-        Rigth
+        Right
     }
-
 
     public class Graph
     {
@@ -274,7 +266,7 @@
             {
                 var newElement = element.CopyPosition();
                 newElement.MoveToRight();
-                Edges.Add(new Edge(newElement, Direction.Rigth));
+                Edges.Add(new Edge(newElement, Direction.Right));
             }
 
             if (element.Position.Y > 0)
@@ -295,9 +287,7 @@
         public int Value { get; set; }
         public Position Position { get; set; }
         public List<Edge> Edges { get; set; } = new List<Edge>();
-
     }
-
 
     public class Edge
     {
@@ -311,4 +301,3 @@
         public Direction Direction { get; set; }
     }
 }
-
