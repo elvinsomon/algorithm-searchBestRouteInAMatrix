@@ -1,11 +1,11 @@
 ﻿internal class Program
 {
-    public static int MatrixDimention = 10;
-    public static int[,] _matrix { get; private set; } = new int[MatrixDimention, MatrixDimention];
-    public static Direction xAxisTargetDirection;
-    public static Direction yAxisTargetDirection;
-    public static Dictionary<Direction, string> DirectionTranslation = new();
-    public static Graph BestRoute { get; set; } = new();
+    private const int _matrixDimention = 10;
+    private static Direction _xAxisTargetDirection;
+    private static Direction _yAxisTargetDirection;
+    private static Graph _bestRoute { get; set; } = new();
+    private static readonly Dictionary<Direction, string> _directionTranslation = new();
+    private static int[,] _matrix { get; set; } = new int[_matrixDimention, _matrixDimention];
 
     public static void Main(string[] args)
     {
@@ -23,8 +23,8 @@
         Console.WriteLine($" · {target.Value} (Destino)");
 
         Console.WriteLine();
-        var totalGraphWeigh = BestRoute.Nodes.Sum(x => x.Value);
-        var totalGraphSteps = BestRoute.Nodes.Count - 1;
+        var totalGraphWeigh = _bestRoute.Nodes.Sum(x => x.Value);
+        var totalGraphSteps = _bestRoute.Nodes.Count - 1;
         Console.WriteLine($"Peso:\t{totalGraphWeigh}");
         Console.WriteLine($"Pasos:\t{totalGraphSteps}");
 
@@ -52,17 +52,17 @@
 
 
         LoadDirectionTranslation();
-        xAxisTargetDirection = GetXAxisTargetDirection(origin, destiny);
-        yAxisTargetDirection = GetYAxisTargetDirection(origin, destiny);
-        Console.WriteLine($"\nEl destino se encuentra {DirectionTranslation[yAxisTargetDirection]} a la {DirectionTranslation[xAxisTargetDirection]} del origen.\n");
+        _xAxisTargetDirection = GetXAxisTargetDirection(origin, destiny);
+        _yAxisTargetDirection = GetYAxisTargetDirection(origin, destiny);
+        Console.WriteLine($"\nEl destino se encuentra {_directionTranslation[_yAxisTargetDirection]} a la {_directionTranslation[_xAxisTargetDirection]} del origen.\n");
     }
 
     private static void LoadDirectionTranslation()
     {
-        DirectionTranslation.Add(Direction.Up, "Arriba");
-        DirectionTranslation.Add(Direction.Down, "Abajo");
-        DirectionTranslation.Add(Direction.Left, "Izquierda");
-        DirectionTranslation.Add(Direction.Right, "Derecha");
+        _directionTranslation.Add(Direction.Up, "Arriba");
+        _directionTranslation.Add(Direction.Down, "Abajo");
+        _directionTranslation.Add(Direction.Left, "Izquierda");
+        _directionTranslation.Add(Direction.Right, "Derecha");
     }
 
     static void ShowMatrix(MatrixElement origin, MatrixElement target)
@@ -70,15 +70,15 @@
         var rand = new Random();
         Console.WriteLine("\n\n");
 
-        for (int h = 0; h < MatrixDimention; h++)
+        for (int h = 0; h < _matrixDimention; h++)
             Console.Write($"\t|{h}|");
 
         Console.WriteLine("\n");
 
-        for (int y = 0; y < MatrixDimention; y++)
+        for (int y = 0; y < _matrixDimention; y++)
         {
             Console.Write($"|{y}|");
-            for (int x = 0; x < MatrixDimention; x++)
+            for (int x = 0; x < _matrixDimention; x++)
             {
                 var matrixValue = rand.Next(1, 10);
                 _matrix[x, y] = matrixValue;
@@ -107,18 +107,19 @@
             }
 
             Console.Write("\n\t");
-            for (int i = 0; i < MatrixDimention * 7.8; i++)
+            for (int i = 0; i < _matrixDimention * 7.8; i++)
                 Console.Write("-");
 
             Console.WriteLine();
         }
     }
+    
+    private static readonly List<MatrixElement> TraveledElements = new();
 
-    private static List<MatrixElement> TraveledElements = new();
-    static void CalculateBestRoute(MatrixElement origin, MatrixElement target)
+    private static void CalculateBestRoute(MatrixElement origin, MatrixElement target)
     {
         var cursor = new Node(_matrix, origin);
-        BestRoute.Nodes.Add(cursor);
+        _bestRoute.Nodes.Add(cursor);
         var cursorMatrixElement = new MatrixElement { Position = new Position(cursor.Position.X, cursor.Position.Y) };
 
         //Si el cursor esta en el destino, terminar el recorrido
@@ -127,12 +128,11 @@
 
         //Evaluar si el target esta en la misma fila o columna que el cursor
         //De ser asi, se debe mover en linea recta hacia el target
-        foreach (var cursorEdge in cursor.Edges)
-            if (CursorIsInTargetPosition(cursorEdge.Element, target))
-            {
-                CalculateBestRoute(cursorEdge.Element, target);
-                return;
-            }
+        foreach (var cursorEdge in cursor.Edges.Where(cursorEdge => CursorIsInTargetPosition(cursorEdge.Element, target)))
+        {
+            CalculateBestRoute(cursorEdge.Element, target);
+            return;
+        }
 
         //Si el cursor apunta a una de las aristas previamente recorridas, eliminarla de la lista de aristas
         foreach (var elementsToDelete in TraveledElements)
@@ -142,9 +142,9 @@
         TraveledElements.Add(cursorMatrixElement);
 
         //Tomar las aristas que este en la direccion del target
-        xAxisTargetDirection = GetXAxisTargetDirection(cursorMatrixElement, target);
-        yAxisTargetDirection = GetYAxisTargetDirection(cursorMatrixElement, target);
-        var edgesInTargetDirection = cursor.Edges.Where(x => x.Direction == xAxisTargetDirection || x.Direction == yAxisTargetDirection);
+        _xAxisTargetDirection = GetXAxisTargetDirection(cursorMatrixElement, target);
+        _yAxisTargetDirection = GetYAxisTargetDirection(cursorMatrixElement, target);
+        var edgesInTargetDirection = cursor.Edges.Where(x => x.Direction == _xAxisTargetDirection || x.Direction == _yAxisTargetDirection);
         var minorValueEdge = edgesInTargetDirection.OrderBy(x => x.Element.Value).First();
 
         Console.Write($" · {minorValueEdge.Element.Value} ");
@@ -164,6 +164,7 @@
                 Console.Write("→");
                 break;
 
+            case Direction.Undefine:
             default:
                 break;
         }
@@ -172,7 +173,7 @@
         
         //A la funcion se le debe pasar el nodo actual, para que en la proxima iteracion sea descartado y no se vualva a procesar.
         //En la primera iteracion el nodo previo es el origen 
-        //previuosNode = previuosNode is null ? origin : cursorMatrixElement;
+        //previousNode = previousNode is null ? origin : cursorMatrixElement;
         CalculateBestRoute(minorValueEdge.Element, target);
     }
 
@@ -262,7 +263,7 @@
                 Edges.Add(new Edge(newElement, Direction.Left));
             }
 
-            if (element.Position.X < MatrixDimention - 1)
+            if (element.Position.X < _matrixDimention - 1)
             {
                 var newElement = element.CopyPosition();
                 newElement.MoveToRight();
@@ -276,7 +277,7 @@
                 Edges.Add(new Edge(newElement, Direction.Up));
             }
 
-            if (element.Position.Y < MatrixDimention - 1)
+            if (element.Position.Y < _matrixDimention - 1)
             {
                 var newElement = element.CopyPosition();
                 newElement.MoveToDown();
